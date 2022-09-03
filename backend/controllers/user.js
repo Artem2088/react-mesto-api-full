@@ -1,4 +1,5 @@
 /* eslint-disable consistent-return */
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
@@ -6,6 +7,8 @@ const DocumentNotFound = require('../utils/documentNotFound');
 const DuplicateError = require('../utils/duplicateError');
 const ErrorUnauthorized = require('../utils/errorUnauthorized');
 const BadRequest = require('../utils/badRequest');
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 // возвращает пользователя
 module.exports.getUserMe = async (req, res, next) => {
@@ -26,9 +29,13 @@ module.exports.login = (req, res, next) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', {
-        expiresIn: '7d',
-      });
+      const token = jwt.sign(
+        { _id: user._id },
+        NODE_ENV === 'production' ? JWT_SECRET : 'some-secret-key',
+        {
+          expiresIn: '7d',
+        },
+      );
       res.send({ token, message: 'Успешная авторизация' });
     })
     .catch((err) => {
